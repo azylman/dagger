@@ -13,10 +13,12 @@ each task as soon as its dependent tasks have completed.
 ```go
 func Execute(tasks ...*Task) error
 ```
-Execute takes in a list of tasks and executes them as soon as possible. Execute
-will never return if it is impossible for any task to complete (either because
-there are cycles in your dependency graph or because a dependent task wasn't
-passed to Execute).
+Execute takes in a list of Tasks and executes each one in its own goroutine, as
+soon as its dependent Tasks have finished. It is not guaranteed that all Tasks
+will execute. If a Task returns an error, Tasks that depend on it will not
+execute. Execute will never return if it is impossible for any task to complete
+(either because there are cycles in your dependency graph or because a dependent
+task wasn't passed to Execute).
 
 #### type Task
 
