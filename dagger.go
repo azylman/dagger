@@ -43,6 +43,10 @@ func Execute(tasks ...*Task) error {
 				<-dep.done
 				// If this dependency errored, don't execute this task.
 				if dep.err != nil {
+					// Set an error on this task as well, so further dependencies don't try to run.
+					// Don't call wg.Error since that was already called when this error first
+					// occurred.
+					task.err = dep.err
 					return
 				}
 			}

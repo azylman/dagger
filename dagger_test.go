@@ -45,6 +45,23 @@ func TestSeriesError(t *testing.T) {
 	assert.Equal(t, i, 0)
 }
 
+func TestLongerSeriesError(t *testing.T) {
+	// Please don't ever actually use dagger to synchronize shared memory like this.
+	// Use channels for communication between goroutines, not shared memory.
+	i := 0
+	t1 := NewTask(func() error { return errors.New("an error") })
+	t2 := NewTask(func() error {
+		i = 1
+		return nil
+	}, t1)
+	t3 := NewTask(func() error {
+		i = 2
+		return nil
+	}, t2)
+	assert.EqualError(t, Execute(t1, t2, t3), "an error")
+	assert.Equal(t, i, 0)
+}
+
 func TestMultiError(t *testing.T) {
 	t1 := NewTask(func() error { return errors.New("error1") })
 	t2 := NewTask(func() error { return errors.New("error2") })
