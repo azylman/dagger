@@ -39,22 +39,26 @@ func Execute(tasks ...*Task) error {
 			defer close(task.done)
 			defer wg.Done()
 			// Wait for all dependencies to finish.
-			for _, dep := range task.deps {
-				<-dep.done
-				// If this dependency errored, don't execute this task.
-				if dep.err != nil {
-					// Set an error on this task as well, so further dependencies don't try to run.
-					// Don't call wg.Error since that was already called when this error first
-					// occurred.
-					task.err = dep.err
-					return
-				}
-			}
-			if err := task.action(); err != nil {
+			if err := executeSingleTask(task, task.deps...); err != nil {
 				task.err = err
 				wg.Error(err)
 			}
 		}(task)
 	}
 	return wg.Wait()
+}
+
+func executeSingleTask(task *Task, deps ...*Task) error {
+	for _, dep := range deps {
+		<-dep.done
+		// If this dependency errored, don't execute this task.
+		if dep.err != nil {
+			// Set an error on this task as well, so further dependencies don't try to run.
+			// Don't call wg.Error since that was already called when this error first
+			// occurred.
+			task.err = dep.err
+			return nil
+		}
+	}
+	return task.action()
 }
